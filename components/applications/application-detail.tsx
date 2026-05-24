@@ -134,7 +134,7 @@ export function ApplicationDetail({ application }: { application: Application })
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex flex-wrap sm:flex-nowrap gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.id}
