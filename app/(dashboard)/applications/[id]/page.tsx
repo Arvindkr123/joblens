@@ -13,9 +13,10 @@ async function getApplication(id: string, userId: string) {
   })
 }
 
-export default async function ApplicationPage({ params }: { params: { id: string } }) {
+export default async function ApplicationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await auth()
-  const application = await getApplication(params.id, session!.user.id)
+  const application = await getApplication(id, session!.user.id)
 
   if (!application) notFound()
 
