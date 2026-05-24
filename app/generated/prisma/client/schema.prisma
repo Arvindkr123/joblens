@@ -1,0 +1,91 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../app/generated/prisma/client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String?
+  email        String?       @unique
+  image        String?
+  password     String? // null for OAuth users
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  userId      String
+  companyName String
+  jobTitle    String
+  jobUrl      String?
+  location    String?
+  salary      String?
+  status      ApplicationStatus @default(WISHLIST)
+  priority    Priority          @default(MEDIUM)
+  notes       String?
+  appliedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviews Interview[]
+  contacts   Contact[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Interview {
+  id            String        @id @default(cuid())
+  applicationId String
+  type          InterviewType
+  scheduledAt   DateTime
+  notes         String?
+  outcome       String?
+  createdAt     DateTime      @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id            String   @id @default(cuid())
+  applicationId String
+  name          String
+  role          String?
+  email         String?
+  linkedin      String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+enum ApplicationStatus {
+  WISHLIST
+  APPLIED
+  INTERVIEW
+  OFFER
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  BEHAVIORAL
+  SYSTEM_DESIGN
+  FINAL
+  OTHER
+}
