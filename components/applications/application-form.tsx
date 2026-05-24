@@ -65,8 +65,10 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
+
+      {/* Company + Job title: stack on mobile, side by side on sm+ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor="companyName">Company *</Label>
           <Input
@@ -89,7 +91,8 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Location + Salary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor="location">Location</Label>
           <Input
@@ -103,13 +106,14 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
           <Label htmlFor="salary">Salary</Label>
           <Input
             id="salary"
-            placeholder="$120k - $150k"
+            placeholder="$120k – $150k"
             value={form.salary}
             onChange={(e) => set("salary", e.target.value)}
           />
         </div>
       </div>
 
+      {/* Job URL — full width */}
       <div className="space-y-1">
         <Label htmlFor="jobUrl">Job URL</Label>
         <Input
@@ -121,11 +125,12 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      {/* Status + Priority + Date: stack on mobile, 3 cols on sm+ */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1">
           <Label>Status</Label>
           <Select value={form.status} onValueChange={(v) => set("status", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -140,7 +145,7 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
         <div className="space-y-1">
           <Label>Priority</Label>
           <Select value={form.priority} onValueChange={(v) => set("priority", v)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -161,6 +166,7 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
         </div>
       </div>
 
+      {/* Notes */}
       <div className="space-y-1">
         <Label htmlFor="notes">Notes</Label>
         <Textarea
@@ -169,17 +175,20 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
           value={form.notes}
           onChange={(e) => set("notes", e.target.value)}
           rows={3}
+          className="resize-none max-h-32 overflow-y-auto"
         />
       </div>
 
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" disabled={isLoading} className="flex-1">
-          {isLoading ? "Saving..." : "Add application"}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
+      {/* Actions: stacked on mobile, row on sm+ */}
+      <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
+        <Button type="submit" disabled={isLoading} className="w-full sm:flex-1">
+          {isLoading ? "Saving..." : "Add application"}
+        </Button>
       </div>
+
     </form>
   )
 }

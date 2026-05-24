@@ -6,11 +6,11 @@ import type { KanbanCard as KanbanCardType, ApplicationStatus } from "@/types"
 import { cn } from "@/lib/utils"
 
 const columnConfig: Record<ApplicationStatus, { label: string; color: string; bg: string }> = {
-  WISHLIST:  { label: "Wishlist",  color: "text-gray-600",  bg: "bg-gray-50" },
-  APPLIED:   { label: "Applied",   color: "text-blue-600",  bg: "bg-blue-50" },
+  WISHLIST: { label: "Wishlist", color: "text-gray-600", bg: "bg-gray-50" },
+  APPLIED: { label: "Applied", color: "text-blue-600", bg: "bg-blue-50" },
   INTERVIEW: { label: "Interview", color: "text-yellow-600", bg: "bg-yellow-50" },
-  OFFER:     { label: "Offer",     color: "text-green-600", bg: "bg-green-50" },
-  REJECTED:  { label: "Rejected",  color: "text-red-600",   bg: "bg-red-50" },
+  OFFER: { label: "Offer", color: "text-green-600", bg: "bg-green-50" },
+  REJECTED: { label: "Rejected", color: "text-red-600", bg: "bg-red-50" },
 }
 
 type Props = {
@@ -23,7 +23,7 @@ export function KanbanColumn({ status, cards, onAddCard }: Props) {
   const config = columnConfig[status]
 
   return (
-    <div className="flex flex-col w-64 flex-shrink-0">
+    <div className="flex flex-col w-64 shrink-0">
       {/* Column header */}
       <div className={cn("flex items-center justify-between px-3 py-2 rounded-lg mb-2", config.bg)}>
         <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export function KanbanColumn({ status, cards, onAddCard }: Props) {
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex flex-col gap-2 flex-1 min-h-32 p-1 rounded-lg transition-colors",
+              "flex flex-col gap-2 flex-1 min-h-32 p-1 pb-20 md:pb-4 rounded-lg transition-colors",
               snapshot.isDraggingOver && "bg-gray-100"
             )}
           >
