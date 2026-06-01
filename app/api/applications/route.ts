@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
 import { revalidateTag } from "next/cache"
 import { z } from "zod"
@@ -18,13 +18,13 @@ const createSchema = z.object({
 
 export async function GET() {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await requireUser()
+        if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
         const applications = await prisma.application.findMany({
-            where: { userId: session.user.id },
+            where: { userId: user.id },
             include: { interviews: true, contacts: true },
             orderBy: { createdAt: "desc" },
         })
@@ -37,26 +37,24 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const session = await auth()
-        if (!session?.user?.id) {
+        const user = await requireUser()
+        if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
         const body = await req.json()
         const data = createSchema.parse(body)
 
-        console.log("[POST /api/applications] userId from session:", session.user.id)
-
         const application = await prisma.application.create({
             data: {
                 ...data,
                 jobUrl: data.jobUrl || null,
                 appliedAt: data.appliedAt ? new Date(data.appliedAt) : null,
-                userId: session.user.id,
+                userId: user.id,
             },
         })
 
-        revalidateTag(`user-${session.user.id}-apps`, "max")
+        revalidateTag(`user-${user.id}-apps`, "max")
 
         return NextResponse.json(application, { status: 201 })
     } catch (error) {

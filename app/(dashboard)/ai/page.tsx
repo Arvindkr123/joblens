@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { getStatusBadgeColor } from "@/lib/badge-colors"
@@ -26,8 +26,9 @@ function formatStatus(status: string): string {
 }
 
 export default async function AiToolsPage() {
-    const session = await auth()
-    const applications = await getApplications(session!.user.id)
+    const user = await requireUser()
+    if (!user) return null
+    const applications = await getApplications(user.id)
 
     return (
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">

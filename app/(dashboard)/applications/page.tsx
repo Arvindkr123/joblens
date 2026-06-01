@@ -1,7 +1,8 @@
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
 import { ApplicationsPageContent } from "@/components/applications/applications-content"
 import { cacheTag, cacheLife } from "next/cache"
+import { redirect } from "next/navigation"
 
 async function getApplications(userId: string) {
   "use cache"
@@ -14,8 +15,9 @@ async function getApplications(userId: string) {
 }
 
 export default async function ApplicationsPage() {
-  const session = await auth()
-  const applications = await getApplications(session!.user.id)
+  const user = await requireUser()
+  if (!user) redirect("/login")
+  const applications = await getApplications(user.id)
 
   return <ApplicationsPageContent applications={applications} />
 }

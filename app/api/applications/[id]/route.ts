@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
 import { revalidateTag } from "next/cache"
 import { z } from "zod"
@@ -21,15 +21,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const user = await requireUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = await params
 
     const application = await prisma.application.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId: user.id },
       include: { interviews: true, contacts: true },
     })
 
@@ -48,8 +48,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const user = await requireUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -58,7 +58,7 @@ export async function PATCH(
     const data = updateSchema.parse(body)
 
     const existing = await prisma.application.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId: user.id },
     })
 
     if (!existing) {
@@ -74,7 +74,7 @@ export async function PATCH(
     })
 
     revalidateTag(`application-${id}`, "max")
-    revalidateTag(`user-${session.user.id}-apps`, "max")
+    revalidateTag(`user-${user.id}-apps`, "max")
 
     return NextResponse.json(application)
   } catch (error) {
@@ -90,15 +90,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const user = await requireUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = await params
 
     const existing = await prisma.application.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId: user.id },
     })
 
     if (!existing) {
@@ -108,7 +108,7 @@ export async function DELETE(
     await prisma.application.delete({ where: { id } })
 
     revalidateTag(`application-${id}`, "max")
-    revalidateTag(`user-${session.user.id}-apps`, "max")
+    revalidateTag(`user-${user.id}-apps`, "max")
 
     return NextResponse.json({ message: "Deleted successfully" })
   } catch {

@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ApplicationDetail } from "@/components/applications/application-detail"
 import { cacheTag, cacheLife } from "next/cache"
 
@@ -19,8 +19,9 @@ async function getApplication(id: string, userId: string) {
 
 export default async function ApplicationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const session = await auth()
-  const application = await getApplication(id, session!.user.id)
+  const user = await requireUser()
+  if (!user) redirect("/login")
+  const application = await getApplication(id, user.id)
 
   if (!application) notFound()
 

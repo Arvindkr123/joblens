@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
 import { SignOutButton } from "@/components/profile/sign-out-button"
 
 const STATUS_LABELS: Record<string, string> = {
@@ -19,20 +20,22 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default async function ProfilePage() {
-  const session = await auth()
-  const user = session!.user
+  const authUser = await requireUser()
+  if (!authUser) redirect("/login")
 
   const [statusGroups, dbUser] = await Promise.all([
     prisma.application.groupBy({
       by: ["status"],
-      where: { userId: user.id },
+      where: { userId: authUser.id },
       _count: { _all: true },
     }),
     prisma.user.findUnique({
-      where: { id: user.id },
-      select: { createdAt: true, email: true },
+      where: { id: authUser.id },
+      select: { createdAt: true, email: true, name: true, image: true },
     }),
   ])
+
+  const user = { ...dbUser, id: authUser.id }
 
   const total = statusGroups.reduce((sum, g) => sum + g._count._all, 0)
   const joinedAt = dbUser?.createdAt

@@ -1,7 +1,8 @@
-import { auth } from "@/lib/auth.server"
+import { requireUser } from "@/lib/require-user"
 import { prisma } from "@/lib/prisma"
 import { KanbanBoard } from "@/components/kanban/board-dynamic"
 import { cacheTag, cacheLife } from "next/cache"
+import { redirect } from "next/navigation"
 import type { KanbanData, ApplicationStatus, KanbanCard } from "@/types"
 
 const STATUSES: ApplicationStatus[] = ["WISHLIST", "APPLIED", "INTERVIEW", "OFFER", "REJECTED"]
@@ -86,10 +87,10 @@ const STAT_CONFIG = [
 ]
 
 export default async function DashboardPage() {
-  const session = await auth()
-  const kanbanData = await getKanbanData(session!.user.id)
-
-  const firstName = session?.user?.name?.split(" ")[0] ?? "there"
+  const user = await requireUser()
+  if (!user) redirect("/login")
+  const kanbanData = await getKanbanData(user.id)
+  const firstName = user.name?.split(" ")[0] ?? "there"
   const total = STATUSES.reduce((sum, s) => sum + kanbanData[s].length, 0)
 
   const applied = kanbanData.APPLIED.length
