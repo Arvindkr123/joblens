@@ -1,10 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import { formatDate } from "@/lib/date"
 import { getStatusBadgeColor, getPriorityBadgeColor } from "@/lib/badge-colors"
 import { AiTools } from "./ai-tools"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { addContact, deleteContact } from "@/lib/actions/contacts"
+import { addInterview, deleteInterview } from "@/lib/actions/interviews"
 import type { ApplicationStatus, Priority } from "@/types"
 
 type Interview = {
@@ -59,8 +80,32 @@ function formatStatus(status: string): string {
 
 type Tab = "overview" | "interviews" | "contacts" | "ai"
 
+const INTERVIEW_TYPES = [
+  { value: "PHONE_SCREEN", label: "Phone Screen" },
+  { value: "TECHNICAL", label: "Technical" },
+  { value: "BEHAVIORAL", label: "Behavioral" },
+  { value: "SYSTEM_DESIGN", label: "System Design" },
+  { value: "FINAL", label: "Final Round" },
+  { value: "OTHER", label: "Other" },
+]
+
 export function ApplicationDetail({ application }: { application: Application }) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [activeTab, setActiveTab] = useState<Tab>("overview")
+
+  const [showContactDialog, setShowContactDialog] = useState(false)
+  const [contactForm, setContactForm] = useState({
+    name: "", role: "", email: "", linkedin: "", notes: "",
+  })
+
+  const [showInterviewDialog, setShowInterviewDialog] = useState(false)
+  const [interviewForm, setInterviewForm] = useState({
+    type: "PHONE_SCREEN" as const,
+    scheduledAt: "",
+    notes: "",
+    outcome: "",
+  })
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: "overview", label: "Overview", icon: "📋" },
@@ -69,9 +114,62 @@ export function ApplicationDetail({ application }: { application: Application })
     { id: "ai", label: "AI Tools", icon: "✨" },
   ]
 
+  function handleAddContact(e: React.SyntheticEvent) {
+    e.preventDefault()
+    startTransition(async () => {
+      try {
+        await addContact(application.id, contactForm)
+        toast.success("Contact added")
+        setShowContactDialog(false)
+        setContactForm({ name: "", role: "", email: "", linkedin: "", notes: "" })
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to add contact")
+      }
+    })
+  }
+
+  function handleDeleteContact(contactId: string) {
+    startTransition(async () => {
+      try {
+        await deleteContact(contactId, application.id)
+        toast.success("Contact removed")
+        router.refresh()
+      } catch {
+        toast.error("Failed to remove contact")
+      }
+    })
+  }
+
+  function handleAddInterview(e: React.SyntheticEvent) {
+    e.preventDefault()
+    startTransition(async () => {
+      try {
+        await addInterview(application.id, interviewForm)
+        toast.success("Interview added")
+        setShowInterviewDialog(false)
+        setInterviewForm({ type: "PHONE_SCREEN", scheduledAt: "", notes: "", outcome: "" })
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to add interview")
+      }
+    })
+  }
+
+  function handleDeleteInterview(interviewId: string) {
+    startTransition(async () => {
+      try {
+        await deleteInterview(interviewId, application.id)
+        toast.success("Interview removed")
+        router.refresh()
+      } catch {
+        toast.error("Failed to remove interview")
+      }
+    })
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Back */}
       <Link
         href="/applications"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
@@ -112,7 +210,6 @@ export function ApplicationDetail({ application }: { application: Application })
           )}
         </div>
 
-        {/* Meta row */}
         <div className="flex items-center gap-6 mt-4 flex-wrap">
           {application.location && (
             <div className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -150,7 +247,7 @@ export function ApplicationDetail({ application }: { application: Application })
         ))}
       </div>
 
-      {/* Tab content */}
+      {/* Overview tab */}
       {activeTab === "overview" && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Notes</h2>
@@ -164,8 +261,15 @@ export function ApplicationDetail({ application }: { application: Application })
         </div>
       )}
 
+      {/* Interviews tab */}
       {activeTab === "interviews" && (
         <div className="space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setShowInterviewDialog(true)}>
+              + Add Interview
+            </Button>
+          </div>
+
           {application.interviews.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">🗓</p>
@@ -183,11 +287,20 @@ export function ApplicationDetail({ application }: { application: Application })
                       {formatDate(interview.scheduledAt)}
                     </p>
                   </div>
-                  {interview.outcome && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium">
-                      {interview.outcome}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {interview.outcome && (
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium">
+                        {interview.outcome}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDeleteInterview(interview.id)}
+                      disabled={isPending}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
                 {interview.notes && (
                   <p className="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-100 whitespace-pre-wrap">
@@ -197,11 +310,102 @@ export function ApplicationDetail({ application }: { application: Application })
               </div>
             ))
           )}
+
+          {/* Add Interview Dialog */}
+          <Dialog open={showInterviewDialog} onOpenChange={setShowInterviewDialog}>
+            <DialogContent aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>Add Interview</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddInterview} className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Type</Label>
+                  <Select
+                    value={interviewForm.type}
+                    onValueChange={(v) =>
+                      setInterviewForm((f) => ({ ...f, type: v as typeof f.type }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INTERVIEW_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="scheduledAt">Date & Time *</Label>
+                  <Input
+                    id="scheduledAt"
+                    type="datetime-local"
+                    value={interviewForm.scheduledAt}
+                    onChange={(e) =>
+                      setInterviewForm((f) => ({ ...f, scheduledAt: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="outcome">Outcome</Label>
+                  <Input
+                    id="outcome"
+                    placeholder="e.g. Passed, Next round..."
+                    value={interviewForm.outcome}
+                    onChange={(e) =>
+                      setInterviewForm((f) => ({ ...f, outcome: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="interviewNotes">Notes</Label>
+                  <Textarea
+                    id="interviewNotes"
+                    placeholder="Notes about this interview..."
+                    value={interviewForm.notes}
+                    onChange={(e) =>
+                      setInterviewForm((f) => ({ ...f, notes: e.target.value }))
+                    }
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowInterviewDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isPending}>
+                    {isPending ? "Saving..." : "Add Interview"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
+      {/* Contacts tab */}
       {activeTab === "contacts" && (
         <div className="space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setShowContactDialog(true)}>
+              + Add Contact
+            </Button>
+          </div>
+
           {application.contacts.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">👤</p>
@@ -217,7 +421,7 @@ export function ApplicationDetail({ application }: { application: Application })
                       <p className="text-sm text-gray-500 mt-0.5">{contact.role}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {contact.email && (
                       <a
                         href={`mailto:${contact.email}`}
@@ -236,6 +440,13 @@ export function ApplicationDetail({ application }: { application: Application })
                         LinkedIn ↗
                       </a>
                     )}
+                    <button
+                      onClick={() => handleDeleteContact(contact.id)}
+                      disabled={isPending}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
                 {contact.notes && (
@@ -246,6 +457,95 @@ export function ApplicationDetail({ application }: { application: Application })
               </div>
             ))
           )}
+
+          {/* Add Contact Dialog */}
+          <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
+            <DialogContent aria-describedby={undefined}>
+              <DialogHeader>
+                <DialogTitle>Add Contact</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddContact} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="contactName">Name *</Label>
+                  <Input
+                    id="contactName"
+                    placeholder="Jane Smith"
+                    value={contactForm.name}
+                    onChange={(e) =>
+                      setContactForm((f) => ({ ...f, name: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="contactRole">Role</Label>
+                    <Input
+                      id="contactRole"
+                      placeholder="Recruiter"
+                      value={contactForm.role}
+                      onChange={(e) =>
+                        setContactForm((f) => ({ ...f, role: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="contactEmail">Email</Label>
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      placeholder="jane@company.com"
+                      value={contactForm.email}
+                      onChange={(e) =>
+                        setContactForm((f) => ({ ...f, email: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="contactLinkedin">LinkedIn URL</Label>
+                  <Input
+                    id="contactLinkedin"
+                    placeholder="https://linkedin.com/in/..."
+                    value={contactForm.linkedin}
+                    onChange={(e) =>
+                      setContactForm((f) => ({ ...f, linkedin: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="contactNotes">Notes</Label>
+                  <Textarea
+                    id="contactNotes"
+                    placeholder="Notes about this contact..."
+                    value={contactForm.notes}
+                    onChange={(e) =>
+                      setContactForm((f) => ({ ...f, notes: e.target.value }))
+                    }
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowContactDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isPending}>
+                    {isPending ? "Saving..." : "Add Contact"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 

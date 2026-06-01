@@ -175,7 +175,7 @@ export function ApplicationForm({ onSuccess, onCancel, defaultStatus = "WISHLIST
           value={form.notes}
           onChange={(e) => set("notes", e.target.value)}
           rows={3}
-          className="resize-none max-h-32 overflow-y-auto"
+          className="resize-none max-h-32 overflow-y-auto break-all"
         />
       </div>
 

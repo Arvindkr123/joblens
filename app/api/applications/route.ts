@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth.server"
 import { prisma } from "@/lib/prisma"
+import { revalidateTag } from "next/cache"
 import { z } from "zod"
 
 const createSchema = z.object({
     companyName: z.string().min(1, "Company name is required"),
     jobTitle: z.string().min(1, "Job title is required"),
-    jobUrl: z.string().url().optional().or(z.literal("")),
+    jobUrl: z.string().optional(),
     location: z.string().optional(),
     salary: z.string().optional(),
     status: z.enum(["WISHLIST", "APPLIED", "INTERVIEW", "OFFER", "REJECTED"]).default("WISHLIST"),
@@ -44,6 +45,8 @@ export async function POST(req: Request) {
         const body = await req.json()
         const data = createSchema.parse(body)
 
+        console.log("[POST /api/applications] userId from session:", session.user.id)
+
         const application = await prisma.application.create({
             data: {
                 ...data,
@@ -53,12 +56,15 @@ export async function POST(req: Request) {
             },
         })
 
+        revalidateTag(`user-${session.user.id}-apps`, "max")
+
         return NextResponse.json(application, { status: 201 })
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json({ error: error.issues[0].message }, { status: 400 })
         }
 
+        console.error("[POST /api/applications]", error)
         return NextResponse.json({ error: "Failed to create application" }, { status: 500 })
     }
 }

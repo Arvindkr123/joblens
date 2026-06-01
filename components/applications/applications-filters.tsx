@@ -30,10 +30,6 @@ const PRIORITIES: { value: Priority; label: string }[] = [
 ]
 
 export function ApplicationsFilters({ filters, onFiltersChange }: Props) {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({ ...filters, search: e.target.value })
-  }
-
   const toggleStatus = (status: ApplicationStatus) => {
     onFiltersChange({
       ...filters,
@@ -52,73 +48,83 @@ export function ApplicationsFilters({ filters, onFiltersChange }: Props) {
     })
   }
 
-  const clearFilters = () => {
-    onFiltersChange({ search: "", status: [], priority: [] })
-  }
-
-  const hasActiveFilters = filters.search || filters.status.length > 0 || filters.priority.length > 0
+  const hasActive = filters.search || filters.status.length > 0 || filters.priority.length > 0
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">Filters</h3>
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
-            Clear all
-          </Button>
-        )}
-      </div>
-
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
       {/* Search */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-600">Search</label>
+      <div className="relative sm:w-64 shrink-0">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
         <Input
-          placeholder="Company name or job title..."
+          placeholder="Search company or title…"
           value={filters.search}
-          onChange={handleSearchChange}
-          className="h-9"
+          onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+          className="pl-9 h-9"
         />
       </div>
 
-      {/* Status Filter */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-600">Status</label>
-        <div className="flex flex-wrap gap-2">
-          {STATUSES.map((status) => (
+      {/* Divider */}
+      <div className="hidden sm:block h-5 w-px bg-gray-200 shrink-0" />
+
+      {/* Status chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {STATUSES.map((s) => {
+          const active = filters.status.includes(s.value)
+          return (
             <button
-              key={status.value}
-              onClick={() => toggleStatus(status.value)}
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                filters.status.includes(status.value)
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border bg-background text-foreground hover:bg-muted"
+              key={s.value}
+              onClick={() => toggleStatus(s.value)}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium transition-colors ${
+                active
+                  ? "bg-gray-900 text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900"
               }`}
             >
-              {status.label}
+              {s.label}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
-      {/* Priority Filter */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-600">Priority</label>
-        <div className="flex flex-wrap gap-2">
-          {PRIORITIES.map((priority) => (
+      {/* Divider */}
+      <div className="hidden sm:block h-5 w-px bg-gray-200 shrink-0" />
+
+      {/* Priority chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {PRIORITIES.map((p) => {
+          const active = filters.priority.includes(p.value)
+          return (
             <button
-              key={priority.value}
-              onClick={() => togglePriority(priority.value)}
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                filters.priority.includes(priority.value)
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border bg-background text-foreground hover:bg-muted"
+              key={p.value}
+              onClick={() => togglePriority(p.value)}
+              className={`h-7 px-2.5 rounded-full text-xs font-medium transition-colors ${
+                active
+                  ? "bg-gray-900 text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900"
               }`}
             >
-              {priority.label}
+              {p.label}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
+
+      {/* Clear */}
+      {hasActive && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-gray-500 shrink-0"
+          onClick={() => onFiltersChange({ search: "", status: [], priority: [] })}
+        >
+          Clear
+        </Button>
+      )}
     </div>
   )
 }

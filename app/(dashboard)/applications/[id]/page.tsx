@@ -2,8 +2,12 @@ import { auth } from "@/lib/auth.server"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { ApplicationDetail } from "@/components/applications/application-detail"
+import { cacheTag, cacheLife } from "next/cache"
 
 async function getApplication(id: string, userId: string) {
+  "use cache"
+  cacheTag(`application-${id}`)
+  cacheLife("minutes")
   return prisma.application.findFirst({
     where: { id, userId },
     include: {

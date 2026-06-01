@@ -67,9 +67,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true
     },
-    jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
+        if (account?.provider === "github") {
+          // user.id here is GitHub's provider ID, not the DB cuid — look up the real one
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+            select: { id: true },
+          })
+          token.id = dbUser?.id
+        } else {
+          token.id = user.id
+        }
       }
       return token
     },

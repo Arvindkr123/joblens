@@ -53,7 +53,7 @@ export function KanbanColumn({ status, cards, onAddCard }: Props) {
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex flex-col gap-2 flex-1 min-h-32 p-1 pb-20 md:pb-4 rounded-lg transition-colors",
+              "flex flex-col gap-2 flex-1 min-h-105 p-1 pb-20 md:pb-4 rounded-lg transition-colors",
               snapshot.isDraggingOver && "bg-gray-100"
             )}
           >

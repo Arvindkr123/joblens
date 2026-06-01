@@ -86,7 +86,7 @@ export function KanbanBoard({ initialData }: Props) {
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 pb-4 flex-wrap">
+        <div className="flex gap-3 pb-4 overflow-x-auto">
           {STATUSES.map((status) => (
             <KanbanColumn
               key={status}
@@ -100,7 +100,7 @@ export function KanbanBoard({ initialData }: Props) {
 
       {/* Add application dialog */}
       <Dialog open={!!addingTo} onOpenChange={() => setAddingTo(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add application</DialogTitle>
           </DialogHeader>

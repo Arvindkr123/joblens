@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth.server"
 import { prisma } from "@/lib/prisma"
+import { revalidateTag } from "next/cache"
 import { z } from "zod"
 
 const updateSchema = z.object({
   companyName: z.string().min(1).optional(),
   jobTitle: z.string().min(1).optional(),
-  jobUrl: z.string().url().optional().or(z.literal("")),
+  jobUrl: z.string().optional(),
   location: z.string().optional(),
   salary: z.string().optional(),
   status: z.enum(["WISHLIST", "APPLIED", "INTERVIEW", "OFFER", "REJECTED"]).optional(),
@@ -72,6 +73,9 @@ export async function PATCH(
       },
     })
 
+    revalidateTag(`application-${id}`, "max")
+    revalidateTag(`user-${session.user.id}-apps`, "max")
+
     return NextResponse.json(application)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -102,6 +106,9 @@ export async function DELETE(
     }
 
     await prisma.application.delete({ where: { id } })
+
+    revalidateTag(`application-${id}`, "max")
+    revalidateTag(`user-${session.user.id}-apps`, "max")
 
     return NextResponse.json({ message: "Deleted successfully" })
   } catch {

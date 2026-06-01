@@ -1,8 +1,17 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { ApplicationsFilters } from "@/components/applications/applications-filters"
 import { ApplicationsTable } from "@/components/applications/applications-table"
+import { ApplicationForm } from "@/components/applications/application-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import type { Application, ApplicationStatus, Priority } from "@/types"
 
 type Props = {
@@ -16,59 +25,63 @@ type Filters = {
 }
 
 export function ApplicationsPageContent({ applications }: Props) {
-  const [filters, setFilters] = useState<Filters>({
-    search: "",
-    status: [],
-    priority: [],
-  })
+  const router = useRouter()
+  const [filters, setFilters] = useState<Filters>({ search: "", status: [], priority: [] })
+  const [showAddDialog, setShowAddDialog] = useState(false)
 
   const filtered = useMemo(() => {
     return applications.filter((app) => {
-      // Search filter
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
-        const matchesSearch =
-          app.companyName.toLowerCase().includes(searchLower) ||
-          app.jobTitle.toLowerCase().includes(searchLower)
-        if (!matchesSearch) return false
+        const q = filters.search.toLowerCase()
+        if (
+          !app.companyName.toLowerCase().includes(q) &&
+          !app.jobTitle.toLowerCase().includes(q)
+        ) return false
       }
-
-      // Status filter
-      if (filters.status.length > 0) {
-        if (!filters.status.includes(app.status as ApplicationStatus)) return false
-      }
-
-      // Priority filter
-      if (filters.priority.length > 0) {
-        if (!filters.priority.includes(app.priority as Priority)) return false
-      }
-
+      if (filters.status.length > 0 && !filters.status.includes(app.status as ApplicationStatus)) return false
+      if (filters.priority.length > 0 && !filters.priority.includes(app.priority as Priority)) return false
       return true
     })
   }, [applications, filters])
 
   return (
-    <div className="p-6 h-full flex flex-col gap-6">
+    <div className="p-6 flex flex-col gap-5 h-full">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Applications</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {filtered.length} of {applications.length} applications
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Applications</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {filtered.length === applications.length
+              ? `${applications.length} total`
+              : `${filtered.length} of ${applications.length}`}
+          </p>
+        </div>
+        <Button onClick={() => setShowAddDialog(true)} className="shrink-0">
+          + New Application
+        </Button>
       </div>
 
-      {/* Layout: Filters on left, table on right */}
-      <div className="flex gap-6 flex-1">
-        {/* Filters Sidebar */}
-        <div className="w-64 shrink-0">
-          <ApplicationsFilters filters={filters} onFiltersChange={setFilters} />
-        </div>
+      {/* Filters */}
+      <ApplicationsFilters filters={filters} onFiltersChange={setFilters} />
 
-        {/* Table */}
-        <div className="flex-1 min-w-0">
-          <ApplicationsTable applications={filtered} />
-        </div>
-      </div>
+      {/* Table */}
+      <ApplicationsTable applications={filtered} />
+
+      {/* Add Application Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-xl" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>New Application</DialogTitle>
+          </DialogHeader>
+          <ApplicationForm
+            onSuccess={() => {
+              setShowAddDialog(false)
+              router.refresh()
+            }}
+            onCancel={() => setShowAddDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
