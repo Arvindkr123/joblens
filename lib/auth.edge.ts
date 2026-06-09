@@ -16,7 +16,7 @@ export const { auth } = NextAuth({
       },
       async authorize() {
         // No DB calls here — just return null
-        // Actual auth happens in auth.server.ts
+        // Actual auth happens in auth.ts
         return null
       },
     }),

@@ -1,5 +1,5 @@
-import { generateResumeTips } from "@/lib/groq"
-import { auth } from "@/lib/auth.server"
+﻿import { generateResumeTips } from "@/lib/groq"
+import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
@@ -10,3 +10,4 @@ export async function POST(req: Request) {
   const result = await generateResumeTips(jobTitle, companyName, jobDescription)
   return NextResponse.json({ result })
 }
+

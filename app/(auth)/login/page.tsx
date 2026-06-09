@@ -31,7 +31,11 @@ export default function LoginPage() {
 
       if (result?.error) {
         console.error("Login error:", result.error)
-        toast.error(result.error)
+        if (result.error === "CredentialsSignin") {
+          toast.error("No account found with this email, or incorrect password.")
+        } else {
+          toast.error("An error occurred during login. Please try again.")
+        }
       } else {
         console.log("Login successful, redirecting to dashboard")
         toast.success("Logged in successfully!")

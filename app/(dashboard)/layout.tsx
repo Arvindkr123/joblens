@@ -1,5 +1,5 @@
-import { Suspense } from "react"
-import { auth } from "@/lib/auth.server"
+﻿import { Suspense } from "react"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 
@@ -26,3 +26,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 }
+

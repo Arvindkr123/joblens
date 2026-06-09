@@ -1,6 +1,6 @@
-"use server"
+﻿"use server"
 
-import { auth } from "@/lib/auth.server"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { updateTag } from "next/cache"
 import { z } from "zod"
@@ -52,3 +52,4 @@ export async function deleteInterview(interviewId: string, applicationId: string
   await prisma.interview.delete({ where: { id: interviewId } })
   updateTag(`application-${applicationId}`)
 }
+
